@@ -3,8 +3,9 @@
     "license": "MIT",
     "type": "library",
 	"version": "1.0.0",
-	  "autoload": {
+    "autoload": {
         "psr-4": {
             "Codatsoft\\Codatbase\\": "src/"
         }
+    },
 }
