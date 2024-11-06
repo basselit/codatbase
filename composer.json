@@ -7,5 +7,5 @@
         "psr-4": {
             "Codatsoft\\Codatbase\\": "src/"
         }
-    },
+    }
 }
