@@ -3,7 +3,7 @@
     "description": "Laravel Power 8",
     "license": "MIT",
     "type": "library",
-	"version": "2.1.0",
+	"version": "3.0.0",
     "require": {
         "php": "^8.3",
         "laravel/framework": "^11.0",
