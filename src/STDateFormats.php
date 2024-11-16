@@ -1,6 +1,6 @@
 <?php
 
-namespace Codatbase\Codatsoft;
+namespace Codatsoft\Codatbase;
 
 abstract class STDateFormats
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\TFramework\Network;
+namespace Codatsoft\Codatbase\Network;
 
 interface IProcessFilter
 {

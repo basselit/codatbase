@@ -1,37 +1,40 @@
 <?php
 
-namespace App\TFramework\Network;
+namespace Codatsoft\Codatbase\Network;
 
-use App\Clover\Business\CLParameters;
-use App\TeckPay\Models\TMerchant;
+use Codatsoft\Codatbase\Accounts\AccountCredential;
 
 abstract class TFilterBase implements IProcessFilter
 {
-    private TMerchant $curMerch;
+    //private TMerchant $curMerch;
     private string $urlTemplate;
 
-    protected array $params;
-    protected array $paramValues;
+    protected TNetworkParameters $initialParameters;
+    protected TNetworkParameters $fullParameters;
 
     public string $fullUrl;
     public string $authToken;
     public string $endPoint;
+    protected AccountCredential $creds;
 
-    public function __construct(TMerchant $curMerch)
+    public function __construct(AccountCredential $accCredential)
     {
-        $this->curMerch = $curMerch;
-        $this->authToken = $curMerch->gatewayPasswordToken;
+        //$this->curMerch = $curMerch;
+        //$this->authToken = $curMerch->gatewayPasswordToken;
+        $this->authToken = $accCredential->getGatewayToken();
+        $this->creds = $accCredential;
         $this->setUrlTemplate();
         $this->processCommon();
     }
 
     protected function processCommon(): void
     {
-        $this->params[] = CLParameters::BASE_URL;
-        $this->params[] = CLParameters::MERCHANT_ID;
+        $this->initialParameters = $this->creds->getInitialParameters();
 
-        $this->paramValues[] = $this->curMerch->gatewayUrl;
-        $this->paramValues[] = $this->curMerch->gatewayMerchantCode;
+        //$this->paramValues[] = $this->curMerch->gatewayUrl;
+       ////// $this->paramValues[] = $this->creds->getGatewayUrl();
+        //$this->paramValues[] = $this->curMerch->gatewayMerchantCode;
+      //////  $this->paramValues[] = $this->creds->getGatewayCode();
 
     }
 
@@ -39,16 +42,28 @@ abstract class TFilterBase implements IProcessFilter
     {
         $newUrl = $this->urlTemplate;
 
-        foreach ($this->params as $key => $value)
+        foreach ($this->fullParameters as $oneParam)
         {
-            $newUrl = str_replace($value,$this->paramValues[$key],$newUrl);
+            $newUrl = str_replace($oneParam->parameterValue ,$oneParam->parameterTitle ,$newUrl);
         }
+
+
+//        foreach ($this->params as $key => $value)
+//        {
+//            $newUrl = str_replace($value,$this->paramValues[$key],$newUrl);
+//        }
 
         return $newUrl;
 
     }
 
-    protected function setUrlTemplate()
+    protected function addParameter(string $paramTitle, string $paramValue)
+    {
+        $this->fullParameters->addParameter($paramTitle,$paramValue);
+
+    }
+
+    protected function setUrlTemplate(): void
     {
         $this->urlTemplate = $this->endPoint;
     }

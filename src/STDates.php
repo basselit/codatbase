@@ -1,6 +1,6 @@
 <?php
 
-namespace App\TFramework\Dates;
+namespace Codatsoft\Codatbase;
 
 use App\TeckPay\Business\STCache;
 use DateTime;

@@ -1,12 +1,11 @@
 <?php
 
 
-namespace App\TFramework\Network;
+namespace Codatsoft\Codatbase\Network;
 
-
-use App\TeckPay\Database\DBSaveRaw;
-use App\TeckPay\Database\TeckDatabase;
+use Codatsoft\Codatbase\Logging\LoggerInterface;
 use GuzzleHttp\Client;
+use Sentry\EventHint;
 use stdClass;
 
 class TNetwork
@@ -21,13 +20,25 @@ class TNetwork
     public ?string $authToken;
     public string $networkMessage;
 
-    public function __construct(TFilterBase $filter = null)
+    protected $logger;
+
+
+    public function __construct(TFilterBase $filter = null, LoggerInterface $logger = null)
     {
         if ($filter != null)
         {
             $this->executeFilter($filter);
         }
 
+        $this->logger = $logger;
+
+    }
+
+    protected function logException(\Throwable $exception, EventHint $myHint = null): void
+    {
+        if ($this->logger) {
+            $this->logger->logException($exception, $myHint);
+        }
     }
 
     public function executeFilter(TFilterBase $oneFilter): stdClass
@@ -68,31 +79,6 @@ class TNetwork
 
     }
 
-    public function buildFilters(CLFilters $filters): array
-    {
-        $retArray = array();
-        foreach ($filters->elements as $key => $value)
-        {
-            $oneFilter = $filters->get($key);
-
-            $this->fullUrl = $oneFilter->fullUrl;
-            $this->authToken = $oneFilter->merchantToken;
-
-            $this->readUrlContentAuth();
-            $this->processNetworkResult();
-
-            if (!$this->success)
-            {
-                return $retArray;
-            }
-            $retArray[] = $this->content;
-
-        }
-
-        return $retArray;
-
-    }
-
 
     public function buildUrl(string $fullUrl, ?string $authToken, bool $isPost = false, $postData = null)
     {
@@ -111,7 +97,7 @@ class TNetwork
 
     }
 
-    private function readUrlContent()
+    private function readUrlContent(): void
     {
         $client = new Client();
         $this->orderFound = false;
@@ -158,7 +144,7 @@ class TNetwork
 
     }
 
-    private function readUrlContentAuth(bool $isPost = false, $postData = null)
+    private function readUrlContentAuth(bool $isPost = false, $postData = null): void
     {
         $client = new Client();
         $this->orderFound = false;
@@ -186,7 +172,7 @@ class TNetwork
         } catch(\GuzzleHttp\Exception\ClientException $e){
             $myHint = new \Sentry\EventHint();
             $myHint->extra = ['fullUrl' => $this->fullUrl, 'responseBody' => $e->getResponse()->getBody()->getContents() ?? 'no response body'];
-            \Sentry\captureException($e, $myHint);
+            $this->logException($e, $myHint);
             $stCode = $e->getCode();
             if ($stCode == 404)
             {
@@ -200,7 +186,7 @@ class TNetwork
                     $this->orderFound = false;
                 }
             }
-            DBSaveRaw::recordTeckLog('ERROR','NETWORK',1,$e->getResponse()->getBody()->getContents() ?? 'no response body');
+           // DBSaveRaw::recordTeckLog('ERROR','NETWORK',1,$e->getResponse()->getBody()->getContents() ?? 'no response body');
         }
 
         if ($stCode == 200)
@@ -211,7 +197,7 @@ class TNetwork
             $this->content = $res;
             $this->orderFound = true;
             $logDet = $this->prepareTeckLog();
-            TeckDatabase::recordTeckLog('INFO','NETWORK',0,$logDet);
+          //  TeckDatabase::recordTeckLog('INFO','NETWORK',0,$logDet);
         } else if ($stCode == 900) {
             $this->success = true;
             $this->orderFound = false;

@@ -1,18 +1,17 @@
 <?php
 
-namespace App\TFramework\Network;
+namespace Codatsoft\Codatbase\Network;
 
-use App\TeckModels\Filters\TOrdersOneDay;
-use App\TeckPay\Models\TMerchant;
+use Codatsoft\Codatbase\Accounts\AccountCredential;
 
 class TFilters
 {
     public array $elements;
-    public TMerchant $curMerch;
+    protected AccountCredential $creds;
 
-    public function __construct(TMerchant $curMerch)
+    public function __construct(AccountCredential $accCredential)
     {
-        $this->curMerch = $curMerch;
+        $this->creds = $accCredential;
         $this->elements = [];
     }
 
@@ -21,19 +20,6 @@ class TFilters
         return $this->elements[$index];
 
     }
-
-    public function processOneDayParts(int $year, int $month, int $day, int $totalParts)
-    {
-
-        for ($i = 1; $i <= $totalParts; $i++)
-        {
-            $oneFilter = new TOrdersOneDay($this->curMerch,$year,$month,$day,$totalParts,$i);
-            $this->elements[] = $oneFilter;
-        }
-    }
-
-
-
 
 
 }
