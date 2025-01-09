@@ -5,6 +5,7 @@ namespace Codatsoft\Codatbase\Network;
 
 use Codatsoft\Codatbase\Logging\LoggerInterface;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Sentry\EventHint;
 use stdClass;
 
@@ -19,8 +20,24 @@ class TNetwork
     public string $fullUrl;
     public ?string $authToken;
     public string $networkMessage;
+    public string $extraHeader;
+    public string $authValue;
+    public bool $isPost = false;
+    public ?stdClass $postData;
+
 
     protected $logger;
+
+
+    public function convertString(string $value): int
+    {
+
+    }
+
+    public function convertSomething($value)
+    {
+
+    }
 
 
     public function __construct(TFilterBase $filter = null, LoggerInterface $logger = null)
@@ -45,8 +62,21 @@ class TNetwork
     {
         $this->fullUrl = $oneFilter->fullUrl;
         $this->authToken = $oneFilter->authToken;
+        $this->isPost = $oneFilter->isPost;
 
-        $this->readUrlContentAuth();
+        $this->extraHeader = $oneFilter->extraHeader;
+        $this->authValue = $oneFilter->authValue;
+        $this->postData = $oneFilter->postData;
+
+        if ($this->authToken)
+        {
+            $this->readUrlContentAuth();
+        } else
+        {
+            $this->readUrlContent();
+
+        }
+
         $this->processNetworkResult();
 
         return $this->content;
@@ -63,7 +93,7 @@ class TNetwork
             $this->fullUrl = $oneFilter->fullUrl;
             $this->authToken = $oneFilter->authToken;
 
-            $this->readUrlContentAuth();
+            $this->readUrlContentAuth('');
             $this->processNetworkResult();
 
             if (!$this->success)
@@ -103,10 +133,21 @@ class TNetwork
         $this->orderFound = false;
         $this->success = false;
 
+        //            "Authorization: whm root:$apiToken",
+
         //$client->setDefaultOption('verify', false);
         //'exceptions' => false,
         try {
-            $res1 = $client->request('GET', $this->fullUrl,['verify' => false]);
+            if ($this->extraHeader !== '')
+            {
+                $parts[] = explode('::',$this->extraHeader);
+                $res1 = $client->request('GET', $this->fullUrl,['verify' => false, 'headers' => [$parts[0] => $parts[1]]]);
+            } else
+            {
+                $res1 = $client->request('GET', $this->fullUrl,['verify' => false]);
+            }
+
+
             $stCode = $res1->getStatusCode();
 
         } catch(\GuzzleHttp\Exception\ClientException $e){
@@ -144,14 +185,15 @@ class TNetwork
 
     }
 
-    private function readUrlContentAuth(bool $isPost = false, $postData = null): void
+    private function readUrlContentAuth(): void
     {
         $client = new Client();
         $this->orderFound = false;
         $this->success = false;
 
+
         $method = 'GET';
-        if ($isPost)
+        if ($this->isPost)
         {
             $method = 'POST';
         }
@@ -159,12 +201,13 @@ class TNetwork
         //$client->setDefaultOption('verify', false);
         //'exceptions' => false,
         try {
-            if ($isPost)
+            if ($this->postData == null)
             {
-                $res1 = $client->request($method, $this->fullUrl,['verify' => false, 'headers' => ['Authorization' => 'Bearer ' . $this->authToken], 'body' => json_encode($postData)]);
+                $res1 = $client->request($method, $this->fullUrl,['verify' => false, 'headers' => ['Authorization' => $this->authValue]]);
+
             } else
             {
-                $res1 = $client->request($method, $this->fullUrl,['verify' => false, 'headers' => ['Authorization' => 'Bearer ' . $this->authToken]]);
+                $res1 = $client->request($method, $this->fullUrl,['verify' => false, 'headers' => ['Authorization' => $this->authValue], 'body' => json_encode($this->postData)]);
             }
 
             $stCode = $res1->getStatusCode();
@@ -187,6 +230,8 @@ class TNetwork
                 }
             }
            // DBSaveRaw::recordTeckLog('ERROR','NETWORK',1,$e->getResponse()->getBody()->getContents() ?? 'no response body');
+        } catch (GuzzleException $e) {
+            $mess = $e->getMessage();
         }
 
         if ($stCode == 200)
@@ -211,6 +256,8 @@ class TNetwork
 
 
     }
+
+
 
 
     private function processNetworkResult(): bool

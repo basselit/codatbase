@@ -3,10 +3,10 @@
     "description": "Codatsoft Codebase Framework",
     "license": "MIT",
     "type": "library",
-	"version": "3.2.0",
+	"version": "3.9.5",
     "require": {
         "php": "^8.3",
-        "laravel/framework": "^11.0",
+        "laravel/framework": "^v11.33.2",
         "guzzlehttp/guzzle": "^7.9",
         "sentry/sentry-laravel": "^4.5.0"
     },

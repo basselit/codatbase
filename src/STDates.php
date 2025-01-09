@@ -2,13 +2,11 @@
 
 namespace Codatsoft\Codatbase;
 
-use App\TeckPay\Business\STCache;
 use DateTime;
+use DateTimeZone;
 
 class STDates
 {
-    public static string $timeZone = 'America/New_York';
-
     public static function areTwoSqlDatesCloseBySeconds(DateTime $date1,DateTime $date2): bool
     {
 
@@ -23,6 +21,17 @@ class STDates
             return  false;
         }
 
+    }
+
+    private static function getTimeZone(): DateTimeZone
+    {
+        try {
+            return new DateTimeZone(date_default_timezone_get());
+
+        } catch (\Throwable $exception)
+        {
+            return new DateTimeZone("America/New_York");
+        }
     }
 
 
@@ -110,7 +119,7 @@ class STDates
         if (is_string($sqlDate))
         {
             $curFormat = self::getFormatFrom($sqlDate);
-            $originalDate = DateTime::createFromFormat($curFormat,$sqlDate,STCache::getTimeZone());
+            $originalDate = DateTime::createFromFormat($curFormat,$sqlDate,self::getTimeZone());
             //$newDateString = DateTime::createFromFormat($curFormat,$sqlDate,STCache::getTimeZone())->format(STDateFormats::SQL_DATE);
             $dateString = $originalDate->format(STDateFormats::SQL_DATE);
             $dateTimeString = $originalDate->format(STDateFormats::SQL_DATE_TIME);
@@ -129,7 +138,7 @@ class STDates
                 $newDateString = $dateTimeString;
             }
 
-            return DateTime::createFromFormat(STDateFormats::SQL_DATE_TIME,$newDateString,STCache::getTimeZone())->getTimestamp() * 1000;
+            return DateTime::createFromFormat(STDateFormats::SQL_DATE_TIME,$newDateString,self::getTimeZone())->getTimestamp() * 1000;
 
         } else
         {
@@ -154,7 +163,7 @@ class STDates
     }
 
 
-    public static function tryConvert(string|int|DateTime|TeckDate $firstDate, string|int|DateTime|TeckDate $secondDate)
+    public static function tryConvert(string|int|DateTime $firstDate, string|int|DateTime $secondDate)
     {
         if (is_int($firstDate))
         {
@@ -186,7 +195,7 @@ class STDates
         $fix1 = substr($unixCloverString,0,10);
         $fix2 = date(STDateFormats::SQL_DATE_TIME, $fix1);
         $fix3 = new DateTime($fix2);
-        $fix3->setTimezone(STCache::getTimeZone());
+        $fix3->setTimezone(self::getTimeZone());
 
         $fix4 = $fix3->format($format);
 
@@ -286,14 +295,13 @@ class STDates
     public static function getNowDate(): DateTime
     {
         $newDate = new DateTime();
-        $newDate->setTimezone(STCache::getTimeZone());
+        $newDate->setTimezone(self::getTimeZone());
         return $newDate;
     }
 
     //
     public static function getNowMonthName($month, $year)
     {
-        date_default_timezone_set('America/New_York');
         //$me = date('F - Y',strtotime('2023-9-1'));
         //return date('F - Y', strtotime($year . '-' . $month));
         return date('F - Y', strtotime($year . '-' . $month));
@@ -301,7 +309,6 @@ class STDates
 
     public static function getNowFileName($month, $year)
     {
-        date_default_timezone_set('America/New_York');
         //$me = date('F - Y',strtotime('2023-9-1'));
         //return date('F - Y', strtotime($year . '-' . $month));
         return strtolower(date('M-Y', strtotime($year . '-' . $month)));
@@ -309,7 +316,6 @@ class STDates
 
     public static function getFileNameDesc($month, $year)
     {
-        date_default_timezone_set('America/New_York');
         //$me = date('F - Y',strtotime('2023-9-1'));
         //return date('F - Y', strtotime($year . '-' . $month));
         return date('F - Y', strtotime($year . '-' . $month));
