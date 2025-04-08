@@ -2,6 +2,8 @@
 
 namespace Codatsoft\Codatbase\Base;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use stdClass;
 
 class TResponse
@@ -13,6 +15,7 @@ class TResponse
     public string $accessToken = "";
     public string $status;
     public int $code;
+    public JsonResponse $response;
 
     public static function from(string $fullError): TResponse
     {
@@ -23,6 +26,16 @@ class TResponse
         $me->message = $parts[1];
         $me->httpErrorCode = $parts[2];
 
+        return $me;
+
+    }
+
+    public static function fromResourceCollection(ResourceCollection $resourceCollection): TResponse
+    {
+        $me = new self();
+        $me->data = json_decode(json_encode($resourceCollection));
+        $me->success = true;
+        $me->response = new JsonResponse($me->data);
         return $me;
 
     }

@@ -4,8 +4,13 @@
 namespace Codatsoft\Codatbase\Network;
 
 use Codatsoft\Codatbase\Logging\LoggerInterface;
+use GuzzleHttp\BodySummarizer;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
 use Sentry\EventHint;
 use stdClass;
 
@@ -24,6 +29,8 @@ class TNetwork
     public string $authValue;
     public bool $isPost = false;
     public ?stdClass $postData;
+    private $config = [];
+    private $headers = [];
 
 
     protected $logger;
@@ -60,22 +67,40 @@ class TNetwork
 
     public function executeFilter(TFilterBase $oneFilter): stdClass
     {
+        $this->extraHeader = $oneFilter->extraHeader;
         $this->fullUrl = $oneFilter->fullUrl;
         $this->authToken = $oneFilter->authToken;
         $this->isPost = $oneFilter->isPost;
-
-        $this->extraHeader = $oneFilter->extraHeader;
         $this->authValue = $oneFilter->authValue;
         $this->postData = $oneFilter->postData;
 
+        if (!str_contains($this->authValue, 'whm'))
+        {
+            $this->headers['Content-Type'] ='application/json';
+        }
+
+        $this->config['verify'] = false;
+
+        if ($this->extraHeader !== '')
+        {
+            $parts[] = explode('::',$this->extraHeader);
+            $this->headers[$parts[0][0]] = $parts[0][1];
+        }
+
         if ($this->authToken)
         {
-            $this->readUrlContentAuth();
-        } else
-        {
-            $this->readUrlContent();
-
+            $this->headers['Authorization'] = $this->authValue;
         }
+
+        $this->config['headers'] = $this->headers;
+        //$this->config[] = ['headers' => ['Accept' => 'application/json','Content-Type' => 'application/json']];
+        if ($this->postData != null)
+        {
+            $this->config['body'] = json_encode($this->postData);
+        }
+
+        $this->readUrlContent();
+
 
         $this->processNetworkResult();
 
@@ -129,41 +154,52 @@ class TNetwork
 
     private function readUrlContent(): void
     {
+        //$stack = HandlerStack::create();
+        //$stack->remove('http_errors');
+        //$stack->unshift(Middleware::httpErrors(new BodySummarizer(1500)), 'http_errors');
+        //$client = new Client(['handler' => $stack]);
+
         $client = new Client();
+
         $this->orderFound = false;
         $this->success = false;
+
+        $method = 'GET';
+        if ($this->isPost)
+        {
+            $method = 'POST';
+        }
+
 
         //            "Authorization: whm root:$apiToken",
 
         //$client->setDefaultOption('verify', false);
         //'exceptions' => false,
         try {
-            if ($this->extraHeader !== '')
-            {
-                $parts[] = explode('::',$this->extraHeader);
-                $res1 = $client->request('GET', $this->fullUrl,['verify' => false, 'headers' => [$parts[0] => $parts[1]]]);
-            } else
-            {
-                $res1 = $client->request('GET', $this->fullUrl,['verify' => false]);
-            }
 
-
+            $res1 = $client->request($method, $this->fullUrl,$this->config);
             $stCode = $res1->getStatusCode();
 
-        } catch(\GuzzleHttp\Exception\ClientException $e){
+        } catch(\GuzzleHttp\Exception\ClientException|GuzzleException $e){
+            $myHint = new \Sentry\EventHint();
+            $myHint->extra = ['fullUrl' => $this->fullUrl, 'responseBody' => $e->getResponse()->getBody()->getContents() ?? 'no response body'];
+            $this->logException($e, $myHint);
             $stCode = $e->getCode();
             $this->networkMessage = $e->getMessage();
+            $body = $e->getResponse()->getBody()->getContents();
             if ($stCode == 404)
             {
                 $response = $e->getResponse();
                 $responseBodyAsString = $response->getBody()->getContents();
                 $res = json_decode($responseBodyAsString);
-                if ($res->details == 'Order not found')
+                \Sentry\captureMessage('Network client error of 404 :' . $responseBodyAsString);
+                if (property_exists($res,'details') && $res->details == 'Order not found')
                 {
                     $stCode = 900;
                     $this->orderFound = false;
                 }
             }
+            // DBSaveRaw::recordTeckLog('ERROR','NETWORK',1,$e->getResponse()->getBody()->getContents() ?? 'no response body');
         }
 
         if ($stCode == 200)
@@ -180,7 +216,7 @@ class TNetwork
         } else
         {
             $this->success = false;
-            $this->message = 'Network Error Cound not read clover orders ' . $this->networkMessage;
+            $this->message = 'Network Error Cound not read clover orders ' . $this->networkMessage ?? '';
         }
 
     }
