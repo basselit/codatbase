@@ -6,25 +6,14 @@ use Codatsoft\Codatbase\Base\TConvertBase;
 
 abstract class TDatabase
 {
-    public function __construct(protected TDBRead $dbReader, protected TDBSave $dbSaver, protected TConvertBase $converter)
+    protected TDBRead $dbReader;
+    protected ?TDBSave $dbSaver;
+    protected ?TConvertBase $dbConverter;
+    public function __construct(TDBRead $dbReader, ?TDBSave $dbSaver, ?TConvertBase $dbConverter)
     {
-
-    }
-
-    public function reader(): TDBRead
-    {
-        return $this->dbReader;
-    }
-
-    public function saver(): TDBSave
-    {
-        return $this->dbSaver;
-
-    }
-
-    public function convert(): TConvertBase
-    {
-        return $this->converter;
+        $this->dbConverter = $dbConverter;
+        $this->dbReader = $dbReader;
+        $this->dbSaver = $dbSaver;
 
     }
 

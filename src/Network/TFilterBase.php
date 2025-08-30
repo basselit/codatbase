@@ -10,15 +10,15 @@ class TFilterBase
     //private TMerchant $curMerch;
     private string $urlTemplate;
 
-    protected TNetworkParameters $initialParameters;
     protected TNetworkParameters $fullParameters;
 
+    public string $baseUrl;
     public string $fullUrl;
-    public string $authToken;
-    public string $extraHeader;
+    public string $authToken = '';
+    public string $extraHeader = '';
     public string $endPoint;
     public string $authType = 'Bearer ';
-    public string $authValue;
+    public string $authValue = '';
     public string $authUser = 'root';
     protected ?AccountCredential $creds;
     public bool $isPost;
@@ -28,31 +28,41 @@ class TFilterBase
     {
         //$this->curMerch = $curMerch;
         //$this->authToken = $curMerch->gatewayPasswordToken;
+        //$this->baseUrl = $baseUrl;
         $this->isPost = false;
         $this->postData = null;
-
+        $this->fullParameters = new TNetworkParameters();
 
     }
 
-    public function createFilter(string $endPointUrl, AccountCredential $accCredential = null,bool $isPost = false)
+    public function create(string $baseUrl, string $authToken = ''): void
+    {
+        $this->baseUrl = $baseUrl;
+        $this->authToken = $authToken;
+
+        if ($authToken != '')
+        {
+            $this->authValue = $this->authType . $this->authToken;
+        }
+
+    }
+
+    public function build(AccountCredential $accCredential = null): void
     {
         if ($accCredential != null)
         {
             $this->creds = $accCredential;
+            $this->authToken = $this->creds->getGatewayToken();
+            $this->extraHeader = $this->creds->getExtraHeader();
         } else
         {
             $this->creds = null;
         }
 
-        $this->endPoint = $endPointUrl;
-        $this->isPost = $isPost;
-
-
-
         $this->setUrlTemplate();
-        $this->processCommon();
-
+        $this->fullUrl = $this->parseUrl();
     }
+
 
     public function setPost(stdClass $postData)
     {
@@ -60,26 +70,6 @@ class TFilterBase
         $this->postData = $postData;
     }
 
-    protected function processCommon(): void
-    {
-        $this->initialParameters = $this->creds->getInitialParameters();
-
-        $this->fullParameters = new TNetworkParameters();
-
-        foreach ($this->initialParameters as $one)
-        {
-            $this->fullParameters->add($one);
-        }
-
-
-
-
-        //$this->paramValues[] = $this->curMerch->gatewayUrl;
-       ////// $this->paramValues[] = $this->creds->getGatewayUrl();
-        //$this->paramValues[] = $this->curMerch->gatewayMerchantCode;
-      //////  $this->paramValues[] = $this->creds->getGatewayCode();
-
-    }
 
     protected function parseUrl(): string
     {
@@ -105,12 +95,17 @@ class TFilterBase
 //            $newUrl = str_replace($value,$this->paramValues[$key],$newUrl);
 //        }
 
-        $this->authValue = $this->creds->getAuthValue();
+        if ($this->creds != null)
+        {
+            $this->authValue = $this->creds->getAuthValue();
+        }
+
+
         return $newUrl;
 
     }
 
-    public function addParameter(string $paramTitle, string $paramValue)
+    public function addParameter(string $paramTitle, string $paramValue): void
     {
         $this->fullParameters->addParameter($paramTitle,$paramValue);
 
@@ -118,19 +113,9 @@ class TFilterBase
 
     protected function setUrlTemplate(): void
     {
-        $this->urlTemplate = $this->endPoint;
+        $this->urlTemplate = $this->baseUrl . $this->endPoint;
     }
 
-    public function build(): void
-    {
-        if ($this->creds != null)
-        {
-            $this->authToken = $this->creds->getGatewayToken();
-            $this->extraHeader = $this->creds->getExtraHeader();
-        }
-
-        $this->fullUrl = $this->parseUrl();
-    }
 
 
 }

@@ -1,12 +1,12 @@
 {
     "name": "codatsoft/codatbase",
-    "description": "Codatsoft Codebase Framework 3.9.5",
+    "description": "Codatsoft Codebase Framework 3.10.2",
     "license": "MIT",
     "type": "library",
-	"version": "3.9.9",
+	"version": "3.10.2",
     "require": {
         "php": "^8.3",
-        "laravel/framework": "^v11.33.2",
+        "laravel/framework": "^12",
         "guzzlehttp/guzzle": "^7.9",
         "sentry/sentry-laravel": "^4.5.0"
     },

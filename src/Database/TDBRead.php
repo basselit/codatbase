@@ -2,40 +2,38 @@
 
 namespace Codatsoft\Codatbase\Database;
 
+use Codatsoft\Codatbase\Base\TConvertBase;
+use Codatsoft\Codatbase\Database\Eloquent\TDBEloquentRead;
+use Codatsoft\Codatbase\Database\PDO\TDBPdoRead;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 class TDBRead
 {
-    public function readTableFilter($table,$column,$value): TDResponse
+    private string $mapper;
+    protected ITDBReader $reader;
+
+    public function __construct(string $mapper = TDBMappers::ELOQUENT)
     {
-        $ret = new TDResponse();
-        try {
-            $query = DB::table($table);
-            $result = $query->where($column, '=' ,$value)->get();
-            $ret->success = true;
-            $ret->data = $result;
-            return $ret;
-        } catch (QueryException $exception) {
-            $ret->success = false;
-            $ret->errorMessage = $exception->getMessage();
-            return $ret;
+        $this->mapper = $mapper;
+        if ($this->mapper == TDBMappers::ELOQUENT)
+        {
+            $this->reader = new TDBEloquentRead();
+        } else
+        {
+            $this->reader = new TDBPdoRead();
         }
+
     }
 
-    public function readTableValue($table,$column,$whereColumn,$columnValue): TDResponse
+    protected function readTableFilter($table,$column,$value): TDResponse
     {
-        $ret = new TDResponse();
-        try {
-            $value = DB::table($table)->where($whereColumn,'=',$columnValue)->value($column);
-            $ret->success = true;
-            $ret->data = $value;
-            return $ret;
-        } catch (QueryException $exception) {
-            $ret->success = false;
-            $ret->errorMessage = $exception->getMessage();
-            return $ret;
-        }
+        return $this->reader->readTableFilter($table,$column,$value);
+    }
+
+    protected function readTableValue($table,$column,$whereColumn,$columnValue): TDResponse
+    {
+        return $this->reader->readTableValue($table, $column, $whereColumn, $columnValue);
     }
 
     public function readTableFilterTwo($table,$column1,$value1,$column2,$value2): TDResponse

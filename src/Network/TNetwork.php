@@ -77,6 +77,8 @@ class TNetwork
         if (!str_contains($this->authValue, 'whm'))
         {
             $this->headers['Content-Type'] ='application/json';
+            $this->headers['Accept'] ='application/json';
+
         }
 
         $this->config['verify'] = false;
@@ -193,18 +195,26 @@ class TNetwork
                 $responseBodyAsString = $response->getBody()->getContents();
                 $res = json_decode($responseBodyAsString);
                 \Sentry\captureMessage('Network client error of 404 :' . $responseBodyAsString);
-                if (property_exists($res,'details') && $res->details == 'Order not found')
+                if ($res == null)
                 {
                     $stCode = 900;
                     $this->orderFound = false;
+                } else
+                {
+                    if (property_exists($res,'details') && $res->details == 'Order not found')
+                    {
+                        $stCode = 900;
+                        $this->orderFound = false;
+                    }
                 }
             }
             // DBSaveRaw::recordTeckLog('ERROR','NETWORK',1,$e->getResponse()->getBody()->getContents() ?? 'no response body');
         }
 
-        if ($stCode == 200)
+        if ($stCode == 200 || $stCode == 201)
         {
             $response_data = $res1->getBody()->getContents();
+            //file_put_contents("mmmm.png", $response_data);
             $res = json_decode($response_data);
             $this->success = true;
             $this->content = $res;

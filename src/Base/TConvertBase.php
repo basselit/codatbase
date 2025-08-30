@@ -3,6 +3,7 @@
 namespace Codatsoft\Codatbase\Base;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use ReflectionObject;
@@ -78,6 +79,22 @@ class TConvertBase
 
 
         return $result;
+
+
+    }
+
+    protected function fromDbToAny(Collection|Model|stdClass $db, string $clazz): mixed
+    {
+        if ($db instanceof Model)
+        {
+            return $this->fromDbToClass($db,$clazz);
+        } elseif ($db instanceof Collection)
+        {
+            return $this->fromDbToClass($db[0],$clazz);
+        } else
+        {
+            return $this->fromDbToClass($db, $clazz);
+        }
 
 
     }
