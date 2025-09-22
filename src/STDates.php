@@ -7,8 +7,15 @@ use DateTimeZone;
 
 class STDates
 {
-    public static function areTwoSqlDatesCloseBySeconds(DateTime $date1,DateTime $date2): bool
+    public static function areTwoSqlDatesCloseBySeconds(?DateTime $date1,?DateTime $date2): bool
     {
+        if ($date1 == null && $date2 == null) {
+            return true;
+        }
+
+        if ($date1 == null || $date2 == null) {
+            return false;
+        }
 
         $diff = $date1->getTimestamp() - $date2->getTimestamp();
         $diff = abs($diff);
@@ -37,6 +44,16 @@ class STDates
 
     public static function areTwoUnixDatesCloseBySeconds($unixClovDate1,$unixClovDate2): bool
     {
+        if ($unixClovDate1 == null && $unixClovDate2 == null)
+        {
+            return true;
+        }
+
+        if ($unixClovDate1 == null || $unixClovDate2 == null)
+        {
+            return false;
+        }
+
         $fix1 = substr($unixClovDate1,0,10);
         $fix2 = substr($unixClovDate2,0,10);
 
@@ -267,6 +284,7 @@ class STDates
         {
             $modTime = $created;
         }
+
 
         $time1 = STDates::getSqlDT($created);
         $time2 = STDates::getSqlDT($clientCreated);
