@@ -4,6 +4,7 @@ namespace Codatsoft\Codatbase;
 
 abstract class STDateFormats
 {
+    //mmm
     public const SQL_DATE_TIME = 'Y-m-d H:i:s';
     public const SQL_DATE_TIME_FULL = 'Y-m-d\TH:i:s.u\Z';
     public const SQL_DATE = 'Y-m-d';
