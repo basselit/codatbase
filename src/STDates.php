@@ -225,6 +225,11 @@ class STDates
         {
             return STDateFormats::SQL_DATE_TIME;
         }
+        
+        if (self::isFormat($date,STDateFormats::SQL_DATE_TIME_FULL))
+        {
+            return STDateFormats::SQL_DATE_TIME_FULL;
+        }
 
         if (self::isFormat($date,STDateFormats::TECK_DATE_FORMAT))
         {
