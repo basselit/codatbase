@@ -25,7 +25,18 @@ class TResponse
         $me->success = $parts[0] == "success" ? true:false;
         $me->message = $parts[1];
         $me->httpErrorCode = $parts[2];
+        
+        $me->response = new JsonResponse(['message' => $me->message]);
 
+        return $me;
+
+    }
+
+    public static function fromObject(mixed $object): TResponse
+    {
+        $me = new self();
+        $me->success = true;
+        $me->response = new JsonResponse($object);
         return $me;
 
     }

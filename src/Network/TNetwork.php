@@ -7,6 +7,7 @@ use Codatsoft\Codatbase\Logging\LoggerInterface;
 use GuzzleHttp\BodySummarizer;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -18,7 +19,7 @@ class TNetwork
 {
     public bool $orderFound;
     public bool $success;
-    public stdClass $content;
+    public ?stdClass $content = null;
     public array $contents;
     public string $message;
 
@@ -34,17 +35,6 @@ class TNetwork
 
 
     protected $logger;
-
-
-    public function convertString(string $value): int
-    {
-
-    }
-
-    public function convertSomething($value)
-    {
-
-    }
 
 
     public function __construct(TFilterBase $filter = null, LoggerInterface $logger = null)
@@ -65,7 +55,7 @@ class TNetwork
         }
     }
 
-    public function executeFilter(TFilterBase $oneFilter): stdClass
+    public function executeFilter(TFilterBase $oneFilter): void
     {
         $this->extraHeader = $oneFilter->extraHeader;
         $this->fullUrl = $oneFilter->fullUrl;
@@ -106,7 +96,8 @@ class TNetwork
 
         $this->processNetworkResult();
 
-        return $this->content;
+        //return $this->content;
+
 
     }
 
@@ -182,7 +173,7 @@ class TNetwork
             $res1 = $client->request($method, $this->fullUrl,$this->config);
             $stCode = $res1->getStatusCode();
 
-        } catch(\GuzzleHttp\Exception\ClientException|GuzzleException $e){
+        } catch(ClientException|GuzzleException $e){
             $myHint = new \Sentry\EventHint();
             $myHint->extra = ['fullUrl' => $this->fullUrl, 'responseBody' => $e->getResponse()->getBody()->getContents() ?? 'no response body'];
             $this->logException($e, $myHint);
@@ -223,6 +214,13 @@ class TNetwork
             $this->success = false;
             $this->orderFound = false;
             $this->message = 'Order not found';
+        } elseif ($stCode == 400) {
+            $this->success = false;
+            if (str_contains($this->networkMessage, 'Invalid phone number'))
+            {
+                $this->success = false;
+                $this->message = 'Invalid phone number';
+            }
         } else
         {
             $this->success = false;
@@ -308,7 +306,7 @@ class TNetwork
 
     private function processNetworkResult(): bool
     {
-        if (property_exists($this->content,'elements'))
+        if ($this->content != null && property_exists($this->content,'elements'))
         {
             $totalCount = count($this->content->elements);
 
@@ -328,7 +326,7 @@ class TNetwork
 
         }
 
-        $this->success = true;
+        //$this->success = true;
         return true;
 
     }
