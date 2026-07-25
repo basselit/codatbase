@@ -3,6 +3,7 @@
 namespace Codatsoft\Codatbase;
 
 use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
 
 class STDates
@@ -247,7 +248,30 @@ class STDates
 
     }
 
-    private static function isFormat(string $date,string $format): bool
+    private static function isFormat(string $date, string $format): bool
+    {
+        $date = trim($date);
+
+        $checkDate = DateTimeImmutable::createFromFormat(
+            '!' . $format,
+            $date,
+            new DateTimeZone('UTC')
+        );
+
+        $errors = DateTimeImmutable::getLastErrors();
+
+        return $checkDate !== false
+            && (
+                $errors === false
+                || (
+                    $errors['warning_count'] === 0
+                    && $errors['error_count'] === 0
+                )
+            )
+            && $checkDate->format($format) === $date;
+    }
+
+    private static function isFormat2(string $date,string $format): bool
     {
         $checkDate = DateTime::createFromFormat($format, $date);
         $valid = $checkDate && $checkDate->format($format) === $date;

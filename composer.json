@@ -1,7 +1,7 @@
 {
     "name": "codatsoft/codatbase",
-    "version": "3.10.8",
-    "description": "Codatsoft Codebase Framework 3.10.8",
+    "version": "3.11.0",
+    "description": "Codatsoft Codebase Framework 3.11.0",
     "license": "MIT",
     "type": "library",
     "require": {
