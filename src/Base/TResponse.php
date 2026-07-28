@@ -32,11 +32,17 @@ class TResponse
 
     }
 
-    public static function fromObject(mixed $object): TResponse
+    public static function fromObject(mixed $object, bool $jsonPretty = false): TResponse
     {
         $me = new self();
         $me->success = true;
-        $me->response = new JsonResponse($object);
+        if ($jsonPretty) {
+            $me->response = new JsonResponse($object, 200, [], JSON_PRETTY_PRINT);
+        } else
+        {
+            $me->response = new JsonResponse($object);
+        }
+
         return $me;
 
     }
