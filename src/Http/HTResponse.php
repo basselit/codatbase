@@ -32,7 +32,8 @@ final class HTResponse implements Responsable, JsonSerializable
 
     public function toResponse($request): JsonResponse
     {
-        return response()->json($this, 200,[], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        //return response()->json($this, 200,[], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return response()->json($this->jsonSerialize(), 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
 }

@@ -2,7 +2,7 @@
 
 namespace Codatsoft\Codatbase\Base;
 
-interface PActionType
+interface PActionType extends \BackedEnum
 {
 
 }
