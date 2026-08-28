@@ -6,7 +6,7 @@ use Codatsoft\Codatbase\Base\PActionType;
 use Illuminate\Foundation\Http\FormRequest;
 use LogicException;
 
-class HTFormRequest extends FormRequest
+abstract class HTFormRequest extends FormRequest
 {
 
     public int $userId;
@@ -49,5 +49,7 @@ class HTFormRequest extends FormRequest
 
         throw new LogicException("No action type mapped for route [{$name}]");
     }
+
+    abstract public function toResult(): HTDReqBase;
 
 }
