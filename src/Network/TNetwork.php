@@ -310,7 +310,7 @@ class TNetwork
         {
             $totalCount = count($this->content->elements);
 
-            if ($totalCount > 999)
+            if ($totalCount > 1000)
             {
                 $this->success = false;
                 $this->message = 'more than 1000 records were returned';
