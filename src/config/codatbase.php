@@ -6,15 +6,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Route enums
-    |--------------------------------------------------------------------------
-    | Enums implementing TRouteAction. HTFormRequest walks this list to resolve
-    | a route name to its action type. One entry per module.
-    */
-    'route_enums' => [],
-
-    /*
-    |--------------------------------------------------------------------------
     | Action enums
     |--------------------------------------------------------------------------
     | Enums implementing PActionType. PActionTypeCast walks this list to resolve
