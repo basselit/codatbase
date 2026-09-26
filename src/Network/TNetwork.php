@@ -9,6 +9,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
@@ -30,6 +31,7 @@ class TNetwork
     public string $authValue;
     public bool $isPost = false;
     public ?stdClass $postData;
+    public bool $verifyTls = true;
     private $config = [];
     private $headers = [];
 
@@ -63,6 +65,7 @@ class TNetwork
         $this->isPost = $oneFilter->isPost;
         $this->authValue = $oneFilter->authValue;
         $this->postData = $oneFilter->postData;
+        $this->verifyTls = $oneFilter->verifyTls;
 
         if (!str_contains($this->authValue, 'whm'))
         {
@@ -71,7 +74,7 @@ class TNetwork
 
         }
 
-        $this->config['verify'] = false;
+        $this->config['verify'] = $this->verifyTls;
 
         if ($this->extraHeader !== '')
         {
@@ -174,28 +177,39 @@ class TNetwork
             $stCode = $res1->getStatusCode();
 
         } catch(ClientException|GuzzleException $e){
-            $myHint = new \Sentry\EventHint();
-            $myHint->extra = ['fullUrl' => $this->fullUrl, 'responseBody' => $e->getResponse()->getBody()->getContents() ?? 'no response body'];
-            $this->logException($e, $myHint);
-            $stCode = $e->getCode();
-            $this->networkMessage = $e->getMessage();
-            $body = $e->getResponse()->getBody()->getContents();
-            if ($stCode == 404)
+            //no http response at all (dns, timeout, tls rejected): nothing to read
+            if (!($e instanceof RequestException) || is_null($e->getResponse()))
             {
-                $response = $e->getResponse();
-                $responseBodyAsString = $response->getBody()->getContents();
-                $res = json_decode($responseBodyAsString);
-                \Sentry\captureMessage('Network client error of 404 :' . $responseBodyAsString);
-                if ($res == null)
+                $myHint = new \Sentry\EventHint();
+                $myHint->extra = ['fullUrl' => $this->fullUrl, 'responseBody' => 'no response'];
+                $this->logException($e, $myHint);
+                $stCode = 0;
+                $this->networkMessage = $e->getMessage();
+            } else
+            {
+                $myHint = new \Sentry\EventHint();
+                $myHint->extra = ['fullUrl' => $this->fullUrl, 'responseBody' => $e->getResponse()->getBody()->getContents() ?? 'no response body'];
+                $this->logException($e, $myHint);
+                $stCode = $e->getCode();
+                $this->networkMessage = $e->getMessage();
+                $body = $e->getResponse()->getBody()->getContents();
+                if ($stCode == 404)
                 {
-                    $stCode = 900;
-                    $this->orderFound = false;
-                } else
-                {
-                    if (property_exists($res,'details') && $res->details == 'Order not found')
+                    $response = $e->getResponse();
+                    $responseBodyAsString = $response->getBody()->getContents();
+                    $res = json_decode($responseBodyAsString);
+                    \Sentry\captureMessage('Network client error of 404 :' . $responseBodyAsString);
+                    if ($res == null)
                     {
                         $stCode = 900;
                         $this->orderFound = false;
+                    } else
+                    {
+                        if (property_exists($res,'details') && $res->details == 'Order not found')
+                        {
+                            $stCode = 900;
+                            $this->orderFound = false;
+                        }
                     }
                 }
             }
@@ -247,11 +261,11 @@ class TNetwork
         try {
             if ($this->postData == null)
             {
-                $res1 = $client->request($method, $this->fullUrl,['verify' => false, 'headers' => ['Authorization' => $this->authValue]]);
+                $res1 = $client->request($method, $this->fullUrl,['verify' => $this->verifyTls, 'headers' => ['Authorization' => $this->authValue]]);
 
             } else
             {
-                $res1 = $client->request($method, $this->fullUrl,['verify' => false, 'headers' => ['Authorization' => $this->authValue], 'body' => json_encode($this->postData)]);
+                $res1 = $client->request($method, $this->fullUrl,['verify' => $this->verifyTls, 'headers' => ['Authorization' => $this->authValue], 'body' => json_encode($this->postData)]);
             }
 
             $stCode = $res1->getStatusCode();
@@ -267,7 +281,7 @@ class TNetwork
                 $responseBodyAsString = $response->getBody()->getContents();
                 $res = json_decode($responseBodyAsString);
                 \Sentry\captureMessage('Network client error of 404 :' . $responseBodyAsString);
-                if (property_exists($res,'details') && $res->details == 'Order not found')
+                if (is_object($res) && property_exists($res,'details') && $res->details == 'Order not found')
                 {
                     $stCode = 900;
                     $this->orderFound = false;
@@ -276,6 +290,7 @@ class TNetwork
            // DBSaveRaw::recordTeckLog('ERROR','NETWORK',1,$e->getResponse()->getBody()->getContents() ?? 'no response body');
         } catch (GuzzleException $e) {
             $mess = $e->getMessage();
+            $stCode = 0;
         }
 
         if ($stCode == 200)

@@ -23,6 +23,8 @@ class TFilterBase
     protected ?AccountCredential $creds;
     public bool $isPost;
     public ?stdClass $postData;
+    //tls certificate verification; turn off only for a known self-signed host (e.g. a whm server)
+    public bool $verifyTls = true;
 
     public function __construct()
     {
